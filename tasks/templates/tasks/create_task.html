@@ -1,0 +1,13 @@
+{% extends 'base.html' %} {% block title %}Neue Aufgabe erstellen{% endblock %}
+{% block content %}
+<div class="form-container">
+  <h2>📝 Eine Task hinzufügen</h2>
+
+  <form method="post">
+    {% csrf_token %} {{ form.as_p }}
+    <button type="submit" class="btn">Speichern</button>
+  </form>
+
+  <p><a href="{% url 'task-list' %}">⏪ Zurück zur Task-Liste</a></p>
+</div>
+{% endblock %}

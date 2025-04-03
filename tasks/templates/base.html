@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}Task Manager{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'tasks/styles.css' %}" />
+  </head>
+  <body>
+    <h1>Mein Super-Taskmanager 📝</h1>
+    <hr />
+    {% block content %}{% endblock %}
+  </body>
+</html>
