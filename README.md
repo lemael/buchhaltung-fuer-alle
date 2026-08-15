@@ -1,4 +1,4 @@
-# 📊 Buchhaltung
+# Buchhaltung
 
 > Moderne Fullstack-Webanwendung zur Verwaltung, Organisation und Analyse von Einnahmen und Ausgaben.
 
@@ -10,7 +10,7 @@ Die gesamte Anwendung wird mit **Docker** containerisiert und kann lokal über *
 
 ---
 
-## 🎯 Project Goals
+## Project Goals
 
 Das Hauptziel des Projekts ist die Entwicklung einer realistischen Fullstack-Anwendung mit modernen Software-Engineering-Prinzipien.
 
@@ -46,7 +46,7 @@ Neben der Funktionalität liegt der Fokus insbesondere auf:
 
 ---
 
-# 🏗️ System Architecture
+# System Architecture
 
 Die Anwendung folgt einer klassischen **Client-Server-Architektur**.
 
