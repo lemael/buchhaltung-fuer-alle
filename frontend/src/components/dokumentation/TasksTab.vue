@@ -50,9 +50,50 @@ const phasen = ref<Projektphase[]>([
       },
     ],
   },
-
+{
+  id: 2,
+  titel: 'UI/UX Design mit Figma',
+  beschreibung: 'Benutzeroberfläche und User Experience in Figma konzipieren und als Grundlage für die Frontend-Entwicklung definieren.',
+  aufgaben: [
+    {
+      id: 6,
+      titel: 'Informationsarchitektur definieren',
+      status: 'offen',
+    },
+    {
+      id: 7,
+      titel: 'Wireframes erstellen',
+      status: 'offen',
+    },
+    {
+      id: 8,
+      titel: 'UI-Design in Figma erstellen',
+      status: 'offen',
+    },
+    {
+      id: 9,
+      titel: 'Design System definieren',
+      status: 'offen',
+    },
+    {
+      id: 10,
+      titel: 'Responsive Layouts für Desktop, Tablet und Mobile erstellen',
+      status: 'offen',
+    },
+    {
+      id: 11,
+      titel: 'Figma-Komponenten und UI-Elemente definieren',
+      status: 'offen',
+    },
+    {
+      id: 12,
+      titel: 'Figma Design für die Vue.js-Implementierung vorbereiten',
+      status: 'offen',
+    },
+  ],
+},
   {
-    id: 2,
+    id: 3,
     titel: 'Backend-Entwicklung',
     beschreibung: 'Django REST API und Datenbank implementieren.',
     aufgaben: [
@@ -85,7 +126,7 @@ const phasen = ref<Projektphase[]>([
   },
 
   {
-    id: 3,
+    id: 4,
     titel: 'Frontend-Entwicklung',
     beschreibung: 'Benutzeroberfläche mit Vue 3 und TypeScript entwickeln.',
     aufgaben: [
@@ -118,7 +159,7 @@ const phasen = ref<Projektphase[]>([
   },
 
   {
-    id: 4,
+    id: 5,
     titel: 'Tests & Qualitätssicherung',
     beschreibung: 'Codequalität sicherstellen und automatisierte Tests erstellen.',
     aufgaben: [
@@ -151,7 +192,7 @@ const phasen = ref<Projektphase[]>([
   },
 
   {
-    id: 5,
+    id: 6,
     titel: 'DevOps & Deployment',
     beschreibung: 'Containerisierung, CI/CD und Bereitstellung der Anwendung.',
     aufgaben: [
