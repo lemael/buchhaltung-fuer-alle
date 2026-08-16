@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, markRaw, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, markRaw } from 'vue'
 
 // Import der einzelnen Unterkomponenten für jeden Tab
 import RequirementsTab from '../components/dokumentation/RequirementsTab.vue'
@@ -7,8 +7,9 @@ import TasksTab from '../components/dokumentation/TasksTab.vue'
 import FrontendTab from '../components/dokumentation/FrontendTab.vue'
 import BackendTab from '../components/dokumentation/BackendTab.vue'
 import DevopsTab from '../components/dokumentation/DevopsTab.vue'
+import FigmaDesignTab from '../components/dokumentation/FigmaDesignTab.vue'
 
-type TabId = 'requirements' | 'tasks' | 'frontend' | 'backend' | 'devops'
+type TabId = 'requirements' | 'tasks' | 'frontend' | 'backend' | 'devops' | 'figma-design'
 
 interface Tab {
   id: TabId
@@ -51,12 +52,48 @@ const tabs: Tab[] = [
     icon: '',
     component: markRaw(DevopsTab),
   },
+  {
+  id: 'figma-design',
+  label: 'Figma Design',
+  icon: '',
+  component: markRaw(FigmaDesignTab),
+},
 ]
 
 // Computed Property zur Ermittlung der aktuell aktiven Komponente
 const activeComponent = computed(() => {
   return tabs.find((tab) => tab.id === activeTabId.value)?.component
 })
+
+// Funktion zur Synchronisation des aktiven Tabs mit dem Hash in der URL
+const syncTabWithHash = () => {
+  const hash = window.location.hash.replace('#', '') as TabId
+  const isValidTab = tabs.some((tab) => tab.id === hash)
+  
+  if (isValidTab) {
+    activeTabId.value = hash
+  }
+}
+
+// Handler für Tab-Wechsel beim Klick
+const selectTab = (id: TabId) => {
+  activeTabId.value = id
+  window.location.hash = id
+}
+
+onMounted(() => {
+  // 1. Initialer Check beim Laden der Seite
+  syncTabWithHash()
+
+  // 2. Event-Listener für Vor/Zurück-Browser-Navigation oder Hash-Änderungen
+  window.addEventListener('hashchange', syncTabWithHash)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('hashchange', syncTabWithHash)
+})
+
+
 </script>
 
 <template>
@@ -80,7 +117,7 @@ const activeComponent = computed(() => {
             :class="{ active: activeTabId === tab.id }"
             :aria-label="tab.label"
             :aria-selected="activeTabId === tab.id"
-            @click="activeTabId = tab.id"
+            @click="selectTab(tab.id)"
           >
             <span class="tab-icon">{{ tab.icon }}</span>
             <span>{{ tab.label }}</span>
