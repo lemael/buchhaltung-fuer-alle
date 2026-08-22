@@ -6,6 +6,14 @@ interface StrukturElement {
 }
 
 const struktur: StrukturElement[] = [
+  
+  {
+    name: 'layouts/',
+    beschreibung:
+      'Globale Layout-Komponenten, die als Wrapper für Views dienen und wiederkehrende UI-Elemente enthalten.',
+    beispiel: 'DashboardLayout.vue',
+  },
+  
   {
     name: 'components/',
     beschreibung: 'Wiederverwendbare UI-Komponenten und fachliche Komponenten der Anwendung.',
@@ -103,13 +111,17 @@ const struktur: StrukturElement[] = [
 │
 ├── src/
 │   ├── assets/
-│   │
+│   |   └── styles/
+│   |        ├── theme.css
+│   ├── layouts/
+│   │   └── DashboardLayout.vue
 │   ├── components/
 │   │   ├── common/
 │   │   ├── buchungen/
 │   │   ├── kategorien/
 │   │   └── dashboard/
 │   │
+|   |
 │   ├── views/
 │   │   ├── DashboardView.vue
 │   │   ├── BuchungenView.vue
@@ -174,7 +186,6 @@ const struktur: StrukturElement[] = [
           <span>View</span>
           <small>Benutzeroberfläche</small>
         </div>
-
         <div class="arrow">→</div>
 
         <div class="architecture-box">

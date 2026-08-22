@@ -9,6 +9,8 @@ import BackendTab from '../components/dokumentation/BackendTab.vue'
 import DevopsTab from '../components/dokumentation/DevopsTab.vue'
 import FigmaDesignTab from '../components/dokumentation/FigmaDesignTab.vue'
 
+
+
 type TabId = 'requirements' | 'tasks' | 'frontend' | 'backend' | 'devops' | 'figma-design'
 
 interface Tab {

@@ -1,0 +1,27 @@
+/* theme.css */
+
+:root {
+  /* Colors */
+  --color-sidebar: #344293;
+  --color-primary: #f24e1e;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-border: #e2e8f0;
+  --color-surface: #ffffff;
+  --color-background-subtle: #f1f5f9;
+
+  /* Typography */
+  --font-family-base: "Inter", sans-serif;
+
+  --font-size-body: 16px;
+  --font-size-title: 20px;
+  --font-size-h1: 32px;
+
+  --line-height-body: 24px;
+  --line-height-title: 28px;
+  --line-height-h1: 40px;
+
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}
