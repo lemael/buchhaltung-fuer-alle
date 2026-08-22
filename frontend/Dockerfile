@@ -5,6 +5,12 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
+# Build argument fourni par Railway
+ARG VITE_API_URL
+
+# Rend la variable disponible pour Vite
+ENV VITE_API_URL=$VITE_API_URL
+
 # Install dependencies
 COPY package*.json ./
 RUN npm ci
