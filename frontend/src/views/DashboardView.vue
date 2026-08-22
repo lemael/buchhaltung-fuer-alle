@@ -87,9 +87,12 @@ const monthlyData = computed(() => {
   })
 
   const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(' ')
-  const pathD = `M${points[0].x},${points[0].y} ` + 
+  const firstPoint = points[0] ?? { x: 100, y: 230 }
+  const lastPoint = points[points.length - 1] ?? { x: 640, y: 230 }
+
+  const pathD = `M${firstPoint.x},${firstPoint.y} ` + 
     points.slice(1).map((p) => `L${p.x},${p.y}`).join(' ') + 
-    ` L${points[points.length - 1].x},230 L${points[0].x},230 Z`
+    ` L${lastPoint.x},230 L${firstPoint.x},230 Z`
 
   return { points, polylinePoints, pathD }
 })
