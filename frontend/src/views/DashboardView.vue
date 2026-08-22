@@ -5,42 +5,49 @@ import { RouterLink } from 'vue-router'
 import { useBuchungenStore } from '@/stores/buchungen'
 
 const buchungenStore = useBuchungenStore()
-// Récupération réactive des Buchungen depuis le store
-const buchungenListe = ref<Buchung[]>(buchungenStore.buchungen)
+// Récupération réactive directe depuis le store Pinia
+const buchungenListe = computed(() => buchungenStore.buchungen)
 
 // Charger les Buchungen depuis le backend au chargement de la vue
 onMounted(() => {
   if (buchungenStore.buchungen.length === 0) {
     buchungenStore.fetchBuchungen()
   }
-  buchungenListe.value = buchungenStore.buchungen
 })
 
 
-// Berechnung des Saldos
-const berechneSaldo = () => {
-  return buchungenListe.value.reduce((acc, buchung) => {
-    return buchung.typ === 'Einnahme' ? acc + buchung.betrag : acc - buchung.betrag
-  }, 0)
-}
+// Auswahl des Jahres für die Anzeige (Dropdown)
+  const selectedYear = ref<number>(new Date().getFullYear())
+  // Extraktion von einzigartigen Jahren aus den Buchungen für die Dropdown-Auswahl
+  const verfügbareJahre = computed(() => {
+  const jahre = buchungenStore.buchungen.map((b) => new Date(b.datum).getFullYear())
+  const uniqueJahre = Array.from(new Set(jahre)).sort((a, b) => b - a)
+  
+  // Si aucune donnée n'est encore chargée, inclure l'année courante par défaut
+  if (uniqueJahre.length === 0) {
+    return [new Date().getFullYear()]
+  }
+  return uniqueJahre
+})
 
 // Berechnung der Gesamteinnahmen
 const berechneEinnahmen = () => {
   return buchungenListe.value
     .filter(buchung => buchung.typ === 'Einnahme')
-    .reduce((acc, buchung) => acc + buchung.betrag, 0)
+    .reduce((acc, buchung) => acc + Math.abs(buchung.betrag), 0)
 }
 
 // Berechnung der Gesamtausgaben
 const berechneAusgaben = () => {
   return buchungenListe.value
     .filter(buchung => buchung.typ === 'Ausgabe')
-    .reduce((acc, buchung) => acc + buchung.betrag, 0)
+    .reduce((acc, buchung) => acc + Math.abs(buchung.betrag), 0)
 }
 // Données réactives pour le Dashboard
 const einnahmen = computed(() => berechneEinnahmen())
 const ausgaben = computed(() => berechneAusgaben())
-const saldo = computed(() => berechneSaldo())
+// // Solde (Saldo = Einnahmen - Ausgaben)
+const saldo = computed(() => einnahmen.value - ausgaben.value)
 
 // Liste des dernières transactions
 const letzteBuchungen = computed(() => {
@@ -57,23 +64,25 @@ const formatCurrency = (val: number) => {
 
 // Calcul des soldes mensuels (Jan-Jun de l'année en cours)
 const monthlyData = computed(() => {
-  const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun']
-  const totals = new Array(6).fill(0)
-  const currentYear = new Date().getFullYear()
+  const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']
+  const totals = new Array(12).fill(0)
+  
 
   buchungenStore.buchungen.forEach((b) => {
     const d = new Date(b.datum)
-    if (d.getFullYear() === currentYear) {
+    if (d.getFullYear() === Number(selectedYear.value)) {
+      console.log(`Buchung: ${b.beschreibung}, Typ: ${b.typ}, Betrag: ${b.betrag}, Datum: ${b.datum}`, { year: d.getFullYear(), selectedYear: Number(selectedYear.value) })
       const monthIdx = d.getMonth()
-      if (monthIdx >= 0 && monthIdx < 6) {
+      // Corriger < 6 par < 12 pour inclure Juillet à Décembre
+      if (monthIdx >= 0 && monthIdx < 12) {
         const amount = Math.abs(Number(b.betrag))
         totals[monthIdx] += b.typ === 'Einnahme' ? amount : -amount
       }
     }
   })
-
-  // Coordonnées X pour les 6 mois dans la grille SVG (largeur 700, padding)
-  const xCoords = [100, 208, 316, 424, 532, 640]
+  
+  // Coordonnées X réparties sur les 12 mois (de 80px à 660px dans le SVG)
+  const xCoords = [80, 132, 185, 237, 290, 342, 395, 447, 500, 552, 605, 657]
   
   // Échelle Y (0€ = y:230, 4.000€ = y:14)
   const maxVal = 4000
@@ -127,13 +136,14 @@ const monthlyData = computed(() => {
 
       <!-- Graphique SVG -->
       <div class="card chart-card">
-        <div class="chart-header">
-          <span class="chart-title">Finanzentwicklung</span>
-          <div class="dropdown-button">
-            <span>Zeitraum</span>
-            <i class="ti ti-chevron-down"></i>
-          </div>
-        </div>
+        <div class="year-select-wrapper">
+           <select id="year-select" v-model="selectedYear" class="year-select">
+              <option v-for="jahr in verfügbareJahre" :key="jahr" :value="jahr">
+                    {{ jahr }}
+              </option>
+           </select>
+          
+       </div>
 
         <div class="chart-wrapper">
           <svg viewBox="0 0 700 260" class="chart-svg">
