@@ -1,31 +1,98 @@
 <script setup lang="ts">
-import { ref, defineComponent } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import type { Buchung } from '@/types/index'
+import { RouterLink } from 'vue-router'
+import { useBuchungenStore } from '@/stores/buchungen'
+
+const buchungenStore = useBuchungenStore()
+// Récupération réactive des Buchungen depuis le store
+const buchungenListe = ref<Buchung[]>(buchungenStore.buchungen)
+
+// Charger les Buchungen depuis le backend au chargement de la vue
+onMounted(() => {
+  if (buchungenStore.buchungen.length === 0) {
+    buchungenStore.fetchBuchungen()
+  }
+  buchungenListe.value = buchungenStore.buchungen
+})
 
 
-interface Buchung {
-  id: number
-  titel: string
-  typ: 'Einnahme' | 'Ausgabe'
-  betrag: number
+// Berechnung des Saldos
+const berechneSaldo = () => {
+  return buchungenListe.value.reduce((acc, buchung) => {
+    return buchung.typ === 'Einnahme' ? acc + buchung.betrag : acc - buchung.betrag
+  }, 0)
 }
 
+// Berechnung der Gesamteinnahmen
+const berechneEinnahmen = () => {
+  return buchungenListe.value
+    .filter(buchung => buchung.typ === 'Einnahme')
+    .reduce((acc, buchung) => acc + buchung.betrag, 0)
+}
+
+// Berechnung der Gesamtausgaben
+const berechneAusgaben = () => {
+  return buchungenListe.value
+    .filter(buchung => buchung.typ === 'Ausgabe')
+    .reduce((acc, buchung) => acc + buchung.betrag, 0)
+}
 // Données réactives pour le Dashboard
-const einnahmen = ref(4250)
-const ausgaben = ref(2180)
-const saldo = ref(2070)
+const einnahmen = computed(() => berechneEinnahmen())
+const ausgaben = computed(() => berechneAusgaben())
+const saldo = computed(() => berechneSaldo())
 
 // Liste des dernières transactions
-const letzteBuchungen = ref<Buchung[]>([
-  { id: 1, titel: 'Kundenzahlung', typ: 'Einnahme', betrag: 2500 },
-  { id: 2, titel: 'Büromaterial', typ: 'Ausgabe', betrag: 120 },
-  { id: 3, titel: 'Internet', typ: 'Ausgabe', betrag: 49 },
-])
+const letzteBuchungen = computed(() => {
+  return buchungenListe.value
+    .slice()
+    .sort((a, b) => new Date(b.datum).getTime() - new Date(a.datum).getTime())
+    .slice(0, 5)
+})
 
 // Formatage monétaire (€)
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(val)
 }
 
+// Calcul des soldes mensuels (Jan-Jun de l'année en cours)
+const monthlyData = computed(() => {
+  const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun']
+  const totals = new Array(6).fill(0)
+  const currentYear = new Date().getFullYear()
+
+  buchungenStore.buchungen.forEach((b) => {
+    const d = new Date(b.datum)
+    if (d.getFullYear() === currentYear) {
+      const monthIdx = d.getMonth()
+      if (monthIdx >= 0 && monthIdx < 6) {
+        const amount = Math.abs(Number(b.betrag))
+        totals[monthIdx] += b.typ === 'Einnahme' ? amount : -amount
+      }
+    }
+  })
+
+  // Coordonnées X pour les 6 mois dans la grille SVG (largeur 700, padding)
+  const xCoords = [100, 208, 316, 424, 532, 640]
+  
+  // Échelle Y (0€ = y:230, 4.000€ = y:14)
+  const maxVal = 4000
+  const minY = 230
+  const maxY = 14
+
+  const points = totals.map((val, idx) => {
+    const clampedVal = Math.max(0, Math.min(val, maxVal))
+    const y = minY - (clampedVal / maxVal) * (minY - maxY)
+    return { x: xCoords[idx], y, month: months[idx], val }
+  })
+
+  const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(' ')
+  const pathD = `M${points[0].x},${points[0].y} ` + 
+    points.slice(1).map((p) => `L${p.x},${p.y}`).join(' ') + 
+    ` L${points[points.length - 1].x},230 L${points[0].x},230 Z`
+
+  return { points, polylinePoints, pathD }
+})
 </script>
 
 <template>
@@ -90,29 +157,34 @@ const formatCurrency = (val: number) => {
             <text x="0" y="234" class="axis-text">0 €</text>
             <line x1="72" y1="230" x2="700" y2="230" class="grid-line" />
 
-            <!-- Labels X -->
-            <text x="100" y="252" class="axis-text" text-anchor="middle">Jan</text>
-            <text x="208" y="252" class="axis-text" text-anchor="middle">Feb</text>
-            <text x="316" y="252" class="axis-text" text-anchor="middle">Mär</text>
-            <text x="424" y="252" class="axis-text" text-anchor="middle">Apr</text>
-            <text x="532" y="252" class="axis-text" text-anchor="middle">Mai</text>
-            <text x="640" y="252" class="axis-text" text-anchor="middle">Jun</text>
+            <!-- Labels X dynamiques -->
+            <text 
+              v-for="p in monthlyData.points" 
+              :key="p.month" 
+              :x="p.x" 
+              y="252" 
+              class="axis-text" 
+              text-anchor="middle"
+            >
+              {{ p.month }}
+            </text>
 
-            <!-- Remplissage et Ligne -->
-            <path d="M100,200 L208,155 L316,100 L424,95 L532,140 L640,130 L640,230 L100,230 Z" fill="url(#lineGrad)" />
-            <polyline points="100,200 208,155 316,100 424,95 532,140 640,130" class="chart-line" />
+            <!-- Remplissage et Ligne dynamiques -->
+            <path :d="monthlyData.pathD" fill="url(#lineGrad)" />
+            <polyline :points="monthlyData.polylinePoints" class="chart-line" />
 
-            <!-- Points de données -->
-            <circle cx="100" cy="200" r="4" class="chart-point" />
-            <circle cx="208" cy="155" r="4" class="chart-point" />
-            <circle cx="316" cy="100" r="4" class="chart-point" />
-            <circle cx="424" cy="95" r="4" class="chart-point" />
-            <circle cx="532" cy="140" r="4" class="chart-point" />
-            <circle cx="640" cy="130" r="4" class="chart-point" />
+            <!-- Points de données dynamiques -->
+            <circle 
+              v-for="p in monthlyData.points" 
+              :key="p.x" 
+              :cx="p.x" 
+              :cy="p.y" 
+              r="4" 
+              class="chart-point" 
+            />
           </svg>
         </div>
       </div>
-
       <!-- Dernières transactions -->
       <div class="card table-card">
         <div class="table-header">
@@ -126,7 +198,7 @@ const formatCurrency = (val: number) => {
           class="table-row"
           :class="{ 'alt-bg': index % 2 !== 0 }"
         >
-          <span class="row-title">{{ item.titel }}</span>
+          <span class="row-title">{{ item.beschreibung }}</span>
           <span class="row-type">{{ item.typ }}</span>
           <span class="row-amount">
             {{ item.typ === 'Einnahme' ? '+' : '-' }}{{ formatCurrency(item.betrag) }}

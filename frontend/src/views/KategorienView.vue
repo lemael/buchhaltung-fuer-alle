@@ -1,29 +1,30 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import type { Kategorie } from '@/types/index'
 
-interface Kategorie {
-  id: number
-  name: string
-}
+import { useKategorienStore } from '@/stores/kategorien'
 
+
+const store = useKategorienStore()
 // Recherche & Liste réactive
 const searchQuery = ref('')
-const kategorien = ref<Kategorie[]>([
-  { id: 1, name: 'Software' },
-  { id: 2, name: 'Internet' },
-  { id: 3, name: 'Bürobedarf' },
-  { id: 4, name: 'Reisen' },
-])
+
 
 // État pour le formulaire (Ajout/Édition)
 const isModalOpen = ref(false)
 const editingId = ref<number | null>(null)
 const categoryNameInput = ref('')
 
+onMounted(() => {
+  store.fetchKategorien()
+})
 // Filtrage réactif selon le texte saisi
 const gefilterteKategorien = computed(() => {
-  return kategorien.value.filter((k) =>
-    k.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const query = searchQuery.value
+    .toLowerCase()
+    .trim()
+  return store.kategorien.filter((k) =>
+    k.name.toLowerCase().includes(query)
   )
 })
 
@@ -46,16 +47,17 @@ const closeModal = () => {
   editingId.value = null
 }
 
-const saveCategory = () => {
+const saveCategory = async () => {
   const trimmed = categoryNameInput.value.trim()
-  if (!trimmed) return
+  if (!trimmed) return 
 
-  if (editingId.value !== null) {
-    const item = kategorien.value.find((k) => k.id === editingId.value)
-    if (item) item.name = trimmed
+ if (editingId.value !== null) {
+    await store.updateKategorie(
+      editingId.value,
+      { name: trimmed },
+    )
   } else {
-    kategorien.value.push({
-      id: Date.now(),
+    await store.createKategorie({
       name: trimmed,
     })
   }
@@ -63,8 +65,8 @@ const saveCategory = () => {
   closeModal()
 }
 
-const deleteCategory = (id: number) => {
-  kategorien.value = kategorien.value.filter((k) => k.id !== id)
+const deleteCategory = async (id: number) => {
+  await store.deleteKategorie(id)
 }
 </script>
 
@@ -74,7 +76,15 @@ const deleteCategory = (id: number) => {
       <!-- En-tête -->
       <h1 class="title">Kategorien</h1>
       <p class="subtitle">Verwalte deine Einnahmen- und Ausgabenkategorien.</p>
-
+      <div v-if="store.loading" class="empty-state">
+          Kategorien werden geladen...
+      </div>
+      <div
+         v-else-if="store.error"
+         class="empty-state"
+      >
+        {{ store.error }}
+      </div>
       <!-- Barre d'action & Recherche -->
       <div class="toolbar">
         <div class="search-box">

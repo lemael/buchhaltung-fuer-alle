@@ -1,90 +1,79 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useBuchungenStore } from '@/stores/buchungen'
 
-interface Buchung {
-  id: number
-  datum: string
-  beschreibung: string
-  kategorie: string
-  typ: 'Einnahme' | 'Ausgabe'
-  betrag: number
-}
+import type { Buchung, Kategorie } from '@/types/index'
 
+const store = useBuchungenStore()
 // Filtres et recherche
 const searchQuery = ref('')
 const selectedType = ref('')
 const selectedKategorie = ref('')
+onMounted(() => {
+  store.fetchBuchungen()
+})
+const kategorienListe = computed<string[]>(() => {
+ const kategorien = store.buchungen.map(
+    (buchung) => buchung.kategorie
+  )
 
-// Données fictives des réservations / écritures
-const buchungen = ref<Buchung[]>([
-  {
-    id: 1,
-    datum: '16.08.2026',
-    beschreibung: 'Büromaterial',
-    kategorie: 'Bürobedarf',
-    typ: 'Ausgabe',
-    betrag: -120,
-  },
-  {
-    id: 2,
-    datum: '16.08.2026',
-    beschreibung: 'Büromaterial',
-    kategorie: 'Bürobedarf',
-    typ: 'Ausgabe',
-    betrag: -120,
-  },
-  {
-    id: 3,
-    datum: '16.08.2026',
-    beschreibung: 'Büromaterial',
-    kategorie: 'Bürobedarf',
-    typ: 'Ausgabe',
-    betrag: -120,
-  },
-  {
-    id: 4,
-    datum: '15.08.2026',
-    beschreibung: 'Kundenzahlung',
-    kategorie: 'Dienstleistungen',
-    typ: 'Einnahme',
-    betrag: 2500,
-  },
-])
-
-// Liste unique des catégories pour le menu déroulant
-const kategorienListe = computed(() => {
-  return Array.from(new Set(buchungen.value.map((b) => b.kategorie)))
+  return [...new Set(kategorien)]
 })
 
-// Filtrage réactif des éléments
-const gefilterteBuchungen = computed(() => {
-  return buchungen.value.filter((b) => {
-    const matchesSearch =
-      b.beschreibung.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      b.kategorie.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchesType = !selectedType.value || b.typ === selectedType.value
-    const matchesKategorie = !selectedKategorie.value || b.kategorie === selectedKategorie.value
 
-    return matchesSearch && matchesType && matchesKategorie
+const gefilterteBuchungen = computed(() => {
+  return store.buchungen.filter((buchung) => {
+    const query =
+      searchQuery.value.toLowerCase()
+
+    const matchesSearch =
+      buchung.beschreibung
+        .toLowerCase()
+        .includes(query) ||
+      buchung.kategorie
+        .toLowerCase()
+        .includes(query)
+
+    const matchesType =
+      !selectedType.value ||
+      buchung.typ === selectedType.value
+
+    const matchesKategorie =
+      !selectedKategorie.value ||
+      buchung.kategorie ===
+        selectedKategorie.value
+
+    return (
+      matchesSearch &&
+      matchesType &&
+      matchesKategorie
+    )
   })
 })
+const handleDelete = async (id: number) => {
+  await store.deleteBuchung(id)
+}
 
-// Actions
 const handleEdit = (id: number) => {
   console.log('Bearbeiten:', id)
 }
 
-const handleDelete = (id: number) => {
-  buchungen.value = buchungen.value.filter((b) => b.id !== id)
+const formatCurrency = (value: number) => {
+  const formatted = new Intl.NumberFormat(
+    'de-DE',
+    {
+      style: 'currency',
+      currency: 'EUR',
+    },
+  ).format(Math.abs(value))
+
+  return value > 0
+    ? `+${formatted}`
+    : `-${formatted}`
 }
 
-const formatCurrency = (val: number) => {
-  const formatted = new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(Math.abs(val))
-  return val > 0 ? `+${formatted}` : `-${formatted}`
-}
+
+
 </script>
 
 <template>
@@ -96,7 +85,14 @@ const formatCurrency = (val: number) => {
         <p class="page-subtitle">Verwalte deine Einnahmen und Ausgaben.</p>
       </div>
 
-      <RouterLink to="/buchungen/neu" class="btn-primary">
+      <div v-if="store.loading">
+        Laden...
+      </div>
+      <div v-else-if="store.error">
+        {{ store.error }}
+      </div>
+
+      <RouterLink to="/neue-buchung" class="btn-primary">
         + neue Buchung
       </RouterLink>
     </div>

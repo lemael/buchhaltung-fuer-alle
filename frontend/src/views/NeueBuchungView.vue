@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useBuchungenStore } from '@/stores/buchungen'
+import { useKategorienStore } from '@/stores/kategorien'
+import type { Kategorie } from '@/types/index'
 
 const router = useRouter()
 
@@ -11,10 +14,19 @@ const typ = ref<'Einnahme' | 'Ausgabe'>('Ausgabe')
 const kategorie = ref('')
 const datum = ref(new Date().toISOString().substring(0, 10)) // Format YYYY-MM-DD
 
-// Liste d'exemple de catégories
-const kategorienListe = ['Bürobedarf', 'Software', 'Internet', 'Dienstleistungen', 'Reisen']
+const buchungenStore = useBuchungenStore()
+const kategorienStore = useKategorienStore()
+// Récupération réactive des catégories depuis le store
+const kategorienListe = computed(() => kategorienStore.kategorien)
 
-const handleSubmit = () => {
+// Charger les catégories depuis le backend au chargement de la vue
+onMounted(() => {
+  if (kategorienStore.kategorien.length === 0) {
+    kategorienStore.fetchKategorien()
+  }
+})
+
+const handleSubmit = async () => {
   if (!beschreibung.value || !betrag.value) return
 
   const neubuchung = {
@@ -25,10 +37,18 @@ const handleSubmit = () => {
     kategorie: kategorie.value,
     datum: datum.value,
   }
-
+  await buchungenStore.createBuchung({
+    
+      beschreibung: neubuchung.beschreibung,
+      betrag: neubuchung.betrag,
+      typ: neubuchung.typ,
+      kategorie: neubuchung.kategorie,
+      datum: neubuchung.datum,
+    
+  })
   console.log('Neue Buchung gespeichert:', neubuchung)
   
-  // Redirection vers la liste des buchungen
+  // 
   router.push('/buchungen')
 }
 
@@ -103,8 +123,8 @@ const handleCancel = () => {
           <div class="select-wrapper">
             <select id="kategorie" v-model="kategorie" class="form-input form-select" required>
               <option value="" disabled>Kategorie auswählen</option>
-              <option v-for="kat in kategorienListe" :key="kat" :value="kat">
-                {{ kat }}
+              <option v-for="kat in kategorienListe" :key="kat.id" :value="kat.name">
+                {{ kat.name }}
               </option>
             </select>
           </div>

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
-    "test:unit": "vitest",
+    "test:unit": "VITE_CONFIG_NATIVE_IGNORE_WARNING=true vitest",
     "test:e2e": "playwright test",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
@@ -22,6 +22,7 @@
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
+    "@pinia/testing": "^2.0.1",
     "@playwright/test": "^1.61.1",
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^28.0.3",
